@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEST</title>
+
+  <link rel="stylesheet" href="./css/flightindicators.min.css">
+</head>
+<body>
+  <div id="root"></div>
+  <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+
+    // This is the wrapper component, most likely it will set initial guage values
+    // and pass them to the children. It will also send those values if it needs to.
+    const GuageCluster = () => {
+      const { useState } = React;
+      const [altitude, setAltitude] = useState(0);
+
+      // Here is a callback we might use, but this could be any function that wants
+      // to get the new altitude when it changes.
+      const onUpdateAltitude = (newAltitude) => {
+        // send the new value to the can bus?
+        setAltitude(newAltitude);
+      }
+
+      return (
+        <div>
+          <input type="number" value={altitude} onChange={(e) => setAltitude(e.target.value)} />
+          <Altimeter
+            altitude={altitude}
+            callback={onUpdateAltitude}
+          />
+        </div>
+      )
+    }
+
+    // This is an example of a single guage component
+    const Altimeter = ({ altitude = 0, callback = null }) => {
+      const { useState } = React;
+      const [isClicked, setIsClicked] = useState(false);
+      const [mousePosition, setMousePosition] = useState({
+        left: 0,
+        top: 0
+      })
+
+      const needle = 90 + altitude % 1000 * 360 / 1000;
+      const needleSmall = altitude / 10000 * 360;
+
+      const handleMouseMove = (event) => {
+        if (isClicked) {
+          setMousePosition({
+            left: event.pageX,
+            top: event.pageY
+          });
+          
+          console.log(event)
+        }
+      }
+
+      const updateAltitude = (event) => {
+        let newAltitude = altitude;
+
+        if (event.type === "mousedown") {
+          newAltitude += 300;
+          setIsClicked(true);
+        } else if (event.type === "mouseup") {
+          newAltitude -=150;
+          setIsClicked(false);
+        }
+
+        if (callback) {
+          callback(newAltitude);
+        }
+      }
+
+      return (
+        <div
+          className={`instrument altimeter ${isClicked ? 'clicked' : ''}`}
+          style={{
+            position: isClicked ? 'fixed' : 'relative'
+          }}
+          onMouseMove={handleMouseMove}
+          onMouseDown={updateAltitude}
+          onMouseUp={updateAltitude}
+        >
+          <img src="./img/fi_box.svg" className="background box" alt="" />
+          <div className="pressure box">
+            <img src="./img/altitude_pressure.svg" className="box" alt="" />
+          </div>
+          <img src="./img/altitude_ticks.svg" className="box" alt="" />
+          <div className="needleSmall box" style={{ transform: `rotate(${needleSmall}deg)` }}>
+            <img src="./img/fi_needle_small.svg" className="box" alt="" />
+          </div>
+          <div className="needle box" style={{ transform: `rotate(${needle}deg)` }}>
+            <img src="./img/fi_needle.svg" className="box" alt="" />
+          </div>
+          <div className="mechanics box">
+            <img src="./img/fi_circle.svg" className="box" alt="" />
+          </div>
+        </div>
+      )
+    }
+
+    ReactDOM.render(
+      <GuageCluster />,
+      document.getElementById('root')
+    );
+  </script>
+  
+</body>
+</html>

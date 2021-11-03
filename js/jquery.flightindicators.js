@@ -50,7 +50,7 @@
 					_setAirSpeed(settings.airspeed);
 				break
 				case 'altimeter':
-					$(this).html('<div class="instrument altimeter"><img src="' + settings.img_directory + 'fi_box.svg" class="background box" alt="" /><div class="pressure box"><img src="' + settings.img_directory + 'altitude_pressure.svg" class="box" alt="" /></div><img src="' + settings.img_directory + 'altitude_ticks.svg" class="box" alt="" /><div class="needleSmall box"><img src="' + settings.img_directory + 'fi_needle_small.svg" class="box" alt="" /></div><div class="needle box"><img src="' + settings.img_directory + 'fi_needle.svg" class="box" alt="" /></div><div class="mechanics box"><img src="' + settings.img_directory + 'fi_circle.svg" class="box" alt="" /></div></div>');
+					$(this).html('<div class="tract-cage"><div class="tract-wrap"></div><div class="instrument altimeter"><img src="' + settings.img_directory + 'fi_box.svg" class="background box" alt="" /><div class="pressure box"><img src="' + settings.img_directory + 'altitude_pressure.svg" class="box" alt="" /></div><img src="' + settings.img_directory + 'altitude_ticks.svg" class="box" alt="" /><div class="needleSmall box"><img src="' + settings.img_directory + 'fi_needle_small.svg" class="box" alt="" /></div><div class="needle box"><img src="' + settings.img_directory + 'fi_needle.svg" class="box" alt="" /></div><div class="mechanics box"><img src="' + settings.img_directory + 'fi_circle.svg" class="box" alt="" /></div></div></div>');
 					_setAltitude(settings.altitude);
 					_setPressure(settings.pressure);
 				break;
@@ -60,6 +60,7 @@
 					_setPitch(settings.pitch);
 			}
 			$(this).find('div.instrument').css({height : settings.size, width : settings.size});
+			$(this).find('div.tract-cage').css({height : settings.size, width : settings.size});
 			$(this).find('div.instrument img.box.background').toggle(settings.showBox);
 		});
 
@@ -115,7 +116,8 @@
 			placeholder.each(function(){
 				$(this).find('div.instrument.altimeter div.needle').css('transform', 'rotate(' + needle + 'deg)');
 				$(this).find('div.instrument.altimeter div.needleSmall').css('transform', 'rotate(' + needleSmall + 'deg)');
-			});	
+			});
+			window.altitude = altitude;	
 		}
 
 		function _setPressure(pressure){

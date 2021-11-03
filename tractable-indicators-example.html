@@ -1,0 +1,102 @@
+<!-- 
+
+jQuery Flight Indicators plugin
+By Sébastien Matton (seb_matton@hotmail.com)
+Published under GPLv3 License.
+
+https://github.com/sebmatton/jQuery-Flight-Indicators
+ 
+ -->
+ <html lang="en" dir="ltr">
+    <head>
+        <meta charset="utf-8">
+        <!-- Syntax coloration -->
+        <link rel="stylesheet" type="text/css" href="_examples_data/prism/prism.css" />
+        <!-- This page style -->
+        <link rel="stylesheet" type="text/css" href="_examples_data/style.css" />
+        <!-- Flight Indicators library styles -->
+        <link rel="stylesheet" type="text/css" href="css/flightindicators.css" />
+        <title>Tractable Flight Indicators Plugin</title>
+
+        <style>
+            .instrument{
+                position:relative;
+                user-select:none;
+            }
+            .instrument *{
+                pointer-events:none;
+            }
+            .tract-cage{
+                position:relative;
+            }
+            .tract-wrap{
+                pointer-events:all;
+                position:absolute;
+                width:100%;
+                height:100%;
+                left:0;
+                top:0;
+                cursor:pointer;
+                z-index:1000;
+            }
+        </style>
+
+    </head>
+    <body>
+        <div class="examples">
+            <span id="altimeter"></span>            
+        </div>
+        <!-- Importing jQuery library -->
+        <script src="http://ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js"></script>
+
+        <!-- Importing the FlightIndicators library -->
+        <script src="js/jquery.flightindicators.js"></script>
+
+        <!-- Let start our scripts -->
+        <script type="text/javascript">
+            var altimeter = $.flightIndicator('#altimeter', 'altimeter');
+            altimeter.setAltitude(2000);
+            altimeter.setPressure(1013);
+            
+            // For every instrument
+            $('.tract-wrap').each(function(){
+                // Add mouse listener object
+                const mouseEar = {
+                    buttDown: false,
+                    x:false,
+                    y:false,
+                    yDiff:0,
+                    xDiff:0
+                }
+                // Altitude variable
+                let currAlt = window.altitude;
+
+                // Altimeter speed multiplier
+                const altSpeed = 20;
+                // Function reverses boolean to determine mouse up and down
+                // Set coordinates of click as baseline points
+                $(this).on('mousedown',function(e){
+                    mouseEar.buttDown = true;
+                    mouseEar.x = e.pageX;
+                    mouseEar.y = e.pageY;
+                    $(this).parent().css('position','static');
+                }).on('mouseup',function(e){
+                    mouseEar.buttDown = false;
+                    currAlt += mouseEar.yDiff;
+                    $(this).parent().css('position','relative');
+                }).on('mousemove',function(e){
+                    if(e.which === 1 && mouseEar.buttDown){
+                        mouseEar.yDiff = altSpeed * (mouseEar.y - e.pageY);
+                        mouseEar.xDiff = altSpeed * (mouseEar.x - e.pageX);
+                        if(currAlt + mouseEar.yDiff > 0){
+                            altimeter.setAltitude(currAlt + mouseEar.yDiff);
+                        }else{
+                            altimeter.setAltitude(0);
+                        }
+                    }
+                });
+            });
+
+        </script>
+    </body>
+</html>    
