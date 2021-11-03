@@ -7,9 +7,31 @@
   <title>TEST</title>
 
   <link rel="stylesheet" href="./css/flightindicators.min.css">
+  <style>
+    .tract-wrap{
+      pointer-events:all;
+      position:absolute;
+      width:100%;
+      height:100%;
+      left:0;
+      top:0;
+      cursor:pointer;
+      z-index:1000;
+    }
+    .instrument{
+      position:relative;
+      user-select:none;
+    }
+    .instrument *{
+      pointer-events:none;
+    }
+  </style>
+
+
 </head>
 <body>
   <div id="root"></div>
+  <!-- <script crossorigin src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script> -->
   <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
@@ -31,77 +53,91 @@
 
       return (
         <div>
-          <input type="number" value={altitude} onChange={(e) => setAltitude(e.target.value)} />
           <Altimeter
             altitude={altitude}
-            callback={onUpdateAltitude}
+            onAltitudeUpdate={onUpdateAltitude}
           />
         </div>
       )
     }
 
     // This is an example of a single guage component
-    const Altimeter = ({ altitude = 0, callback = null }) => {
+    const Altimeter = ({ altitude = 0, onAltitudeUpdate = null }) => {
       const { useState } = React;
-      const [isClicked, setIsClicked] = useState(false);
+      const [isClicked, setIsClicked] = useState(true);
+      const [guageAltitude, setGuageAltitude] = useState(altitude);
       const [mousePosition, setMousePosition] = useState({
-        left: 0,
-        top: 0
+        mouseX: 0,
+        mouseY: 0
       })
 
-      const needle = 90 + altitude % 1000 * 360 / 1000;
-      const needleSmall = altitude / 10000 * 360;
+      const needle = (currentAltitude = 0) => (90 + currentAltitude % 1000 * 360 / 1000);
+      const needleSmall = (currentAltitude = 0) => (currentAltitude / 10000 * 360);
+      const speedMultiplier = 20;
+      const indicatorSize = 200;
+      
+      const updateAltitude = (event) => {
+        if ((guageAltitude + (mousePosition.mouseY - event.pageY)) > 0) {
+          setGuageAltitude(altitude + (mousePosition.mouseY - event.pageY));
+        }
+      };
+      
+      const handleMouseDown = (event) => {
+        setIsClicked(true);
+        setMousePosition({
+          mouseX: event.pageX,
+          mouseY: event.pageY
+        })
+      }
 
       const handleMouseMove = (event) => {
         if (isClicked) {
-          setMousePosition({
-            left: event.pageX,
-            top: event.pageY
-          });
-          
-          console.log(event)
+          updateAltitude(event);
         }
       }
 
-      const updateAltitude = (event) => {
-        let newAltitude = altitude;
-
-        if (event.type === "mousedown") {
-          newAltitude += 300;
-          setIsClicked(true);
-        } else if (event.type === "mouseup") {
-          newAltitude -=150;
+      const handleMouseUp = () => {
+        if (isClicked && onAltitudeUpdate) {
           setIsClicked(false);
-        }
-
-        if (callback) {
-          callback(newAltitude);
+          onAltitudeUpdate(guageAltitude);
         }
       }
 
       return (
         <div
-          className={`instrument altimeter ${isClicked ? 'clicked' : ''}`}
+          className="tract-cage"
           style={{
-            position: isClicked ? 'fixed' : 'relative'
+            position: isClicked ? 'static' : 'relative',
+            height: `${indicatorSize}px`,
+            width: `${indicatorSize}px`
           }}
-          onMouseMove={handleMouseMove}
-          onMouseDown={updateAltitude}
-          onMouseUp={updateAltitude}
         >
-          <img src="./img/fi_box.svg" className="background box" alt="" />
-          <div className="pressure box">
-            <img src="./img/altitude_pressure.svg" className="box" alt="" />
-          </div>
-          <img src="./img/altitude_ticks.svg" className="box" alt="" />
-          <div className="needleSmall box" style={{ transform: `rotate(${needleSmall}deg)` }}>
-            <img src="./img/fi_needle_small.svg" className="box" alt="" />
-          </div>
-          <div className="needle box" style={{ transform: `rotate(${needle}deg)` }}>
-            <img src="./img/fi_needle.svg" className="box" alt="" />
-          </div>
-          <div className="mechanics box">
-            <img src="./img/fi_circle.svg" className="box" alt="" />
+          <div className="tract-wrap"
+            onMouseMove={handleMouseMove}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+          ></div>
+          <div
+            className={`instrument altimeter ${isClicked ? 'clicked' : ''}`}
+            style={{ 
+              height: `${indicatorSize}px`,
+              width: `${indicatorSize}px`
+            }}
+          >
+            <img src="./img/fi_box.svg" className="background box" alt="" />
+            <div className="pressure box">
+              <img src="./img/altitude_pressure.svg" className="box" alt="" />
+            </div>
+            <img src="./img/altitude_ticks.svg" className="box" alt="" />
+            <div className="needleSmall box" style={{ transform: `rotate(${needleSmall(guageAltitude)}deg)` }}>
+              <img src="./img/fi_needle_small.svg" className="box" alt="" />
+            </div>
+            <div className="needle box" style={{ transform: `rotate(${needle(guageAltitude)}deg)` }}>
+              <img src="./img/fi_needle.svg" className="box" alt="" />
+            </div>
+            <div className="mechanics box">
+              <img src="./img/fi_circle.svg" className="box" alt="" />
+            </div>
           </div>
         </div>
       )
