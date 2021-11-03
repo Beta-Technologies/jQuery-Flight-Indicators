@@ -61,7 +61,7 @@
       )
     }
 
-    // This is an example of a single guage component
+    // Altimeter
     const Altimeter = ({ altitude = 0, onAltitudeUpdate = null }) => {
       const { useState } = React;
       const [isClicked, setIsClicked] = useState(true);
@@ -76,12 +76,14 @@
       const speedMultiplier = 20;
       const indicatorSize = 200;
       
+      // Update Function
       const updateAltitude = (event) => {
         if ((guageAltitude + (mousePosition.mouseY - event.pageY)) > 0) {
           setGuageAltitude(altitude + (mousePosition.mouseY - event.pageY));
         }
       };
       
+      // Mouse Down Function
       const handleMouseDown = (event) => {
         setIsClicked(true);
         setMousePosition({
@@ -90,12 +92,14 @@
         })
       }
 
+      // Mouse Move Function
       const handleMouseMove = (event) => {
         if (isClicked) {
           updateAltitude(event);
         }
       }
 
+      // Mouse Up Function
       const handleMouseUp = () => {
         if (isClicked && onAltitudeUpdate) {
           setIsClicked(false);
