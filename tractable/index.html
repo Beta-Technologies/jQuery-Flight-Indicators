@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TEST</title>
+
+  <link rel="stylesheet" href="./css/flightindicators.min.css">
+  <style>
+    .tract-wrap{
+      pointer-events:all;
+      position:absolute;
+      width:100%;
+      height:100%;
+      left:0;
+      top:0;
+      cursor:pointer;
+      z-index:1000;
+    }
+    .instrument{
+      position:relative;
+      user-select:none;
+    }
+    .instrument *{
+      pointer-events:none;
+    }
+  </style>
+
+
+</head>
+<body>
+  <div id="root"></div>
+  <!-- <script crossorigin src="https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"></script> -->
+  <script crossorigin src="https://unpkg.com/react@17/umd/react.development.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@17/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <script type="text/babel">
+
+    // This is the wrapper component, most likely it will set initial guage values
+    // and pass them to the children. It will also send those values if it needs to.
+    const GuageCluster = () => {
+      const { useState } = React;
+      const [altitude, setAltitude] = useState(0);
+
+      // Here is a callback we might use, but this could be any function that wants
+      // to get the new altitude when it changes.
+      const onUpdateAltitude = (newAltitude) => {
+        // send the new value to the can bus?
+        setAltitude(newAltitude);
+      }
+
+      return (
+        <div>
+          <Altimeter
+            altitude={altitude}
+            onAltitudeUpdate={onUpdateAltitude}
+          />
+        </div>
+      )
+    }
+
+    // Altimeter
+    const Altimeter = ({ altitude = 0, onAltitudeUpdate = null }) => {
+      const { useState } = React;
+      const [isClicked, setIsClicked] = useState(true);
+      const [guageAltitude, setGuageAltitude] = useState(altitude);
+      const [mousePosition, setMousePosition] = useState({
+        mouseX: 0,
+        mouseY: 0
+      })
+
+      const needle = (currentAltitude = 0) => (90 + currentAltitude % 1000 * 360 / 1000);
+      const needleSmall = (currentAltitude = 0) => (currentAltitude / 10000 * 360);
+      const speedMultiplier = 20;
+      const indicatorSize = 200;
+      
+      // Update Function
+      const updateAltitude = (event) => {
+        if ((guageAltitude + (mousePosition.mouseY - event.pageY)) > 0) {
+          setGuageAltitude(altitude + (mousePosition.mouseY - event.pageY));
+        }
+      };
+      
+      // Mouse Down Function
+      const handleMouseDown = (event) => {
+        setIsClicked(true);
+        setMousePosition({
+          mouseX: event.pageX,
+          mouseY: event.pageY
+        })
+      }
+
+      // Mouse Move Function
+      const handleMouseMove = (event) => {
+        if (isClicked) {
+          updateAltitude(event);
+        }
+      }
+
+      // Mouse Up Function
+      const handleMouseUp = () => {
+        if (isClicked && onAltitudeUpdate) {
+          setIsClicked(false);
+          onAltitudeUpdate(guageAltitude);
+        }
+      }
+
+      return (
+        <div
+          className="tract-cage"
+          style={{
+            position: isClicked ? 'static' : 'relative',
+            height: `${indicatorSize}px`,
+            width: `${indicatorSize}px`
+          }}
+        >
+          <div className="tract-wrap"
+            onMouseMove={handleMouseMove}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+          ></div>
+          <div
+            className={`instrument altimeter ${isClicked ? 'clicked' : ''}`}
+            style={{ 
+              height: `${indicatorSize}px`,
+              width: `${indicatorSize}px`
+            }}
+          >
+            <img src="./img/fi_box.svg" className="background box" alt="" />
+            <div className="pressure box">
+              <img src="./img/altitude_pressure.svg" className="box" alt="" />
+            </div>
+            <img src="./img/altitude_ticks.svg" className="box" alt="" />
+            <div className="needleSmall box" style={{ transform: `rotate(${needleSmall(guageAltitude)}deg)` }}>
+              <img src="./img/fi_needle_small.svg" className="box" alt="" />
+            </div>
+            <div className="needle box" style={{ transform: `rotate(${needle(guageAltitude)}deg)` }}>
+              <img src="./img/fi_needle.svg" className="box" alt="" />
+            </div>
+            <div className="mechanics box">
+              <img src="./img/fi_circle.svg" className="box" alt="" />
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    ReactDOM.render(
+      <GuageCluster />,
+      document.getElementById('root')
+    );
+  </script>
+  
+</body>
+</html>
