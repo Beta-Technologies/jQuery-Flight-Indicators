@@ -8,6 +8,24 @@
 
   <link rel="stylesheet" href="./css/flightindicators.min.css">
   <style>
+    .instrument-parent{
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      height:100vh;
+    }
+    .instrument-parent.focus .instrument-child.no-focus{
+      pointer-events:none;
+      position:relative;
+      z-index:-1;
+    }
+    /* .instrument-child{
+
+    }
+    .instrument-child.no-focus{
+      position:relative;
+      z-index:-1;
+    } */
     .tract-wrap{
       pointer-events:all;
       position:absolute;
@@ -43,28 +61,128 @@
     const GuageCluster = () => {
       const { useState } = React;
       const [altitude, setAltitude] = useState(0);
-
+      const [heading, setHeading] = useState(0);
+      const [airspeed, setAirspeed] = useState(0);
+      const [pitch, setPitch] = useState(0);
+      const [roll, setRoll] = useState(0);
+      const [parentClicked, setParentClicked] = useState(false);
+      
       // Here is a callback we might use, but this could be any function that wants
       // to get the new altitude when it changes.
       const onUpdateAltitude = (newAltitude) => {
         // send the new value to the can bus?
         setAltitude(newAltitude);
       }
+      const onUpdateHeading = (newHeading) => {
+        // send the new value to the can bus?
+        setHeading(newHeading);
+      }
+      const onUpdateAirspeed = (newAirspeed) => {
+        // send the new value to the can bus?
+        setAirspeed(newAirspeed);
+      }
+      const onUpdatePitch = (newPitch) => {
+        // send the new value to the can bus?
+        setPitch(newPitch);
+      }
+      const onUpdateRoll = (newRoll) => {
+        // send the new value to the can bus?
+        setRoll(newRoll);
+      }
+
+      // Mouse Down Function
+      const handleParentMouseDown = (event) => {
+        setParentClicked(true);
+      }
+
+      // Mouse Up Function
+      const handleParentMouseUp = () => {
+        if (parentClicked) {
+          setParentClicked(false);
+        }
+      }
+
+      // Mouse Down Function
+      const handleChildMouseDown = (event) => {
+        let clickedEl = event.target.closest('.instrument-child');
+        let clickedSibs = event.target.closest('.instrument-parent').children;
+        for(var i = 0; i < clickedSibs.length; i++){
+          if (clickedSibs[i] != clickedEl){
+            clickedSibs[i].classList.add('no-focus');
+          }
+        }
+      }
+
+      // Mouse Up Function
+      const handleChildMouseUp = () => {
+        let instrumentChildren =  document.getElementsByClassName('instrument-child');
+        for(var i = 0; i < instrumentChildren.length; i++){
+          instrumentChildren[i].classList.remove('no-focus');
+        }
+      }
 
       return (
-        <div>
-          <Altimeter
-            altitude={altitude}
-            onAltitudeUpdate={onUpdateAltitude}
-          />
+        <div 
+          className={`instrument-parent ${parentClicked ? 'focus' : ''}`}
+          onMouseDown={handleParentMouseDown}
+          onMouseUp={handleParentMouseUp}
+        >
+          <div 
+            //className={`instrument-child ${childClicked ? '' : 'no-focus'}`}
+            className="instrument-child"
+            onMouseDown={handleChildMouseDown}
+            onMouseUp={handleChildMouseUp}  
+          >
+            <Altimeter
+              altitude={altitude}
+              onAltitudeUpdate={onUpdateAltitude}
+            />
+          </div>
+          <div 
+            //className={`instrument-child ${childClicked ? '' : 'no-focus'}`}
+            className="instrument-child"
+            onMouseDown={handleChildMouseDown}
+            onMouseUp={handleChildMouseUp}  
+          >
+            <Heading
+              heading={heading}
+              onHeadingUpdate={onUpdateHeading}
+            />
+          </div>
+          <div 
+            //className={`instrument-child ${childClicked ? '' : 'no-focus'}`}
+            className="instrument-child"
+            onMouseDown={handleChildMouseDown}
+            onMouseUp={handleChildMouseUp}  
+          >
+            <Attitude
+              pitch={pitch}
+              roll={roll}
+              onUpdatePitch={onUpdatePitch}
+              onUpdateRoll={onUpdateRoll}
+            />
+          </div>
+          <div 
+            //className={`instrument-child ${childClicked ? '' : 'no-focus'}`}
+            className="instrument-child"
+            onMouseDown={handleChildMouseDown}
+            onMouseUp={handleChildMouseUp}  
+          >
+            <Airspeed
+              airspeed={airspeed}
+              onAirspeedUpdate={onUpdateAirspeed}
+            />
+          </div>
         </div>
       )
     }
 
-    // Altimeter
+    ///////////////
+    // Altimeter //
+    ///////////////
     const Altimeter = ({ altitude = 0, onAltitudeUpdate = null }) => {
       const { useState } = React;
-      const [isClicked, setIsClicked] = useState(true);
+      const [isClicked, setIsClicked] = useState(false);
       const [guageAltitude, setGuageAltitude] = useState(altitude);
       const [mousePosition, setMousePosition] = useState({
         mouseX: 0,
@@ -79,7 +197,9 @@
       // Update Function
       const updateAltitude = (event) => {
         if ((guageAltitude + (mousePosition.mouseY - event.pageY)) > 0) {
-          setGuageAltitude(altitude + (mousePosition.mouseY - event.pageY));
+          setGuageAltitude((altitude + (mousePosition.mouseY - event.pageY)) * speedMultiplier);
+        } else {
+          setGuageAltitude(0);
         }
       };
       
@@ -137,6 +257,276 @@
               <img src="./img/fi_needle_small.svg" className="box" alt="" />
             </div>
             <div className="needle box" style={{ transform: `rotate(${needle(guageAltitude)}deg)` }}>
+              <img src="./img/fi_needle.svg" className="box" alt="" />
+            </div>
+            <div className="mechanics box">
+              <img src="./img/fi_circle.svg" className="box" alt="" />
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    /////////////
+    // Heading //
+    /////////////
+    const Heading = ({ heading = 0, onHeadingUpdate = null }) => {
+      const { useState } = React;
+      const [isClicked, setIsClicked] = useState(false);
+      const [guageHeading, setGuageHeading] = useState(heading);
+      const [mousePosition, setMousePosition] = useState({
+        mouseX: 0,
+        mouseY: 0
+      })
+
+      const speedMultiplier = 1;
+      const indicatorSize = 200;
+      
+      // Update Function
+      const updateHeading = (event) => {
+        setGuageHeading(heading + (mousePosition.mouseX - event.pageX));
+      };
+      
+      // Mouse Down Function
+      const handleMouseDown = (event) => {
+        setIsClicked(true);
+        setMousePosition({
+          mouseX: event.pageX,
+          mouseY: event.pageY
+        })
+      }
+
+      // Mouse Move Function
+      const handleMouseMove = (event) => {
+        if (isClicked) {
+          updateHeading(event);
+        }
+      }
+
+      // Mouse Up Function
+      const handleMouseUp = () => {
+        if (isClicked && onHeadingUpdate) {
+          setIsClicked(false);
+          onHeadingUpdate(guageHeading);
+        }
+      }
+
+      return (
+        <div
+          className="tract-cage"
+          style={{
+            position: isClicked ? 'static' : 'relative',
+            height: `${indicatorSize}px`,
+            width: `${indicatorSize}px`
+          }}
+        >
+          <div className="tract-wrap"
+            onMouseMove={handleMouseMove}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+          ></div>
+          <div
+            className={`instrument heading ${isClicked ? 'clicked' : ''}`}
+            style={{ 
+              height: `${indicatorSize}px`,
+              width: `${indicatorSize}px`
+            }}
+          >
+            <img src="./img/fi_box.svg" className="background box" alt="" />
+            <div className="heading box" style={{ transform: `rotate(${ guageHeading * speedMultiplier }deg)` }}>
+              <img src="./img/heading_yaw.svg" className="box" alt="" />
+            </div>
+            <div className="mechanics box">
+              <img src="./img/heading_mechanics.svg" className="box" alt="" />
+              <img src="./img/fi_circle.svg" className="box" alt="" />
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    //////////////
+    // Attitude //
+    //////////////
+    const Attitude = ({ pitch = 0, roll = 0, onUpdatePitch = null, onUpdateRoll = null }) => {
+      const { useState } = React;
+      const [isClicked, setIsClicked] = useState(false);
+      const [gaugePitch, setGaugePitch] = useState(pitch);
+      const [gaugeRoll, setGaugeRoll] = useState(roll);
+      const [mousePosition, setMousePosition] = useState({
+        mouseX: 0,
+        mouseY: 0
+      });
+
+      const indicatorSize = 200;
+      const pitchBound = 30;
+      
+      // Update Function
+      const updatePitch = (event) => {
+        let pitchVal = pitch + (mousePosition.mouseY - event.pageY);
+
+        if ( pitchVal > pitchBound ) {
+          setGaugePitch(pitchBound);
+        } else if ( pitchVal < -pitchBound ) { 
+          pitchVal = -pitchBound;
+          setGaugePitch(-pitchBound);
+        } else {
+          setGaugePitch(pitchVal);
+        }
+      };
+
+      const updateRoll = (event) => {
+        setGaugeRoll(roll + (mousePosition.mouseX - event.pageX));
+      };
+      
+      // Mouse Down Function
+      const handleMouseDown = (event) => {
+        setIsClicked(true);
+        setMousePosition({
+          mouseX: event.pageX,
+          mouseY: event.pageY
+        })
+      }
+
+      // Mouse Move Function
+      const handleMouseMove = (event) => {
+        if (isClicked) {
+          updatePitch(event);
+          updateRoll(event);
+        }
+      }
+
+      // Mouse Up Function
+      const handleMouseUp = () => {
+        if (isClicked) {
+          setIsClicked(false);
+
+          if (onUpdatePitch) {
+            onUpdatePitch(gaugePitch);
+          }
+
+          if (onUpdateRoll) {
+            onUpdateRoll(gaugeRoll);
+          }
+        }
+      }
+
+      return (
+        <div
+          className="tract-cage"
+          style={{
+            position: isClicked ? 'static' : 'relative',
+            height: `${indicatorSize}px`,
+            width: `${indicatorSize}px`
+          }}
+        >
+          <div className="tract-wrap"
+            onMouseMove={handleMouseMove}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+          ></div>
+          <div
+            className={`instrument attitude ${isClicked ? 'clicked' : ''}`}
+            style={{ 
+              height: `${indicatorSize}px`,
+              width: `${indicatorSize}px`
+            }}
+          >
+            <img src="./img/fi_box.svg" className="background box" alt="" />
+            <div className="roll box" style={{ transform: `rotate(${gaugeRoll}deg)` }}>
+              <img src="./img/horizon_back.svg" className="box" alt="" />
+              <div className="pitch box" style={{ top: `${gaugePitch * 0.7}%` }}>
+                <img src="./img/horizon_ball.svg" className="box" alt="" />
+              </div>
+              <img src="./img/horizon_circle.svg" className="box" alt="" />
+            </div>
+            <div className="mechanics box">
+              <img src="./img/horizon_mechanics.svg" className="box" alt="" />
+              <img src="./img/fi_circle.svg" className="box" alt="" />
+            </div>
+          </div>
+        </div>
+      )
+    }
+
+    //////////////
+    // Airspeed //
+    //////////////
+    const Airspeed = ({ airspeed = 0, onAirspeedUpdate = null }) => {
+      const { useState } = React;
+      const [isClicked, setIsClicked] = useState(false);
+      const [guageAirspeed, setGuageAirspeed] = useState(airspeed);
+      const [mousePosition, setMousePosition] = useState({
+        mouseX: 0,
+        mouseY: 0
+      })
+
+      const speedMultiplier = 1;
+      const indicatorSize = 200;
+      const airspeedLimit = 160;
+      
+      // Multiplied by 2 because current dial has 180 tics. Would have to be updated for faster aircraft.
+      const speedNeedle = (currentAirspeed = 0) => (90 + currentAirspeed * 2);
+
+      // Update Function
+      const updateAirspeed = (event) => {
+        if ((airspeed + (mousePosition.mouseY - event.pageY)) > 0 && (airspeed + (mousePosition.mouseY - event.pageY)) < airspeedLimit) {
+          setGuageAirspeed(airspeed + (mousePosition.mouseY - event.pageY));
+        } else if ((airspeed + (mousePosition.mouseY - event.pageY)) < 0 && (airspeed + (mousePosition.mouseY - event.pageY)) < airspeedLimit) {
+          setGuageAirspeed(0);
+        } else if ((airspeed + (mousePosition.mouseY - event.pageY)) > 0 && (airspeed + (mousePosition.mouseY - event.pageY)) > airspeedLimit) {
+          setGuageAirspeed(airspeedLimit);
+        }
+      };
+      
+      // Mouse Down Function
+      const handleMouseDown = (event) => {
+        setIsClicked(true);
+        setMousePosition({
+          mouseX: event.pageX,
+          mouseY: event.pageY
+        })
+      }
+
+      // Mouse Move Function
+      const handleMouseMove = (event) => {
+        if (isClicked) {
+          updateAirspeed(event);
+        }
+      }
+
+      // Mouse Up Function
+      const handleMouseUp = () => {
+        if (isClicked && onAirspeedUpdate) {
+          setIsClicked(false);
+          onAirspeedUpdate(guageAirspeed);
+        }
+      }
+
+      return (
+        <div
+          className="tract-cage"
+          style={{
+            position: isClicked ? 'static' : 'relative',
+            height: `${indicatorSize}px`,
+            width: `${indicatorSize}px`
+          }}
+        >
+          <div className="tract-wrap"
+            onMouseMove={handleMouseMove}
+            onMouseDown={handleMouseDown}
+            onMouseUp={handleMouseUp}
+          ></div>
+          <div
+            className={`instrument airspeed ${isClicked ? 'clicked' : ''}`}
+            style={{ 
+              height: `${indicatorSize}px`,
+              width: `${indicatorSize}px`
+            }}
+          >
+            <img src="./img/fi_box.svg" className="background box" alt="" />
+            <img src="./img/speed_mechanics.svg" className="box" alt="" />
+            <div className="speed box" style={{ transform: `rotate(${ speedNeedle(guageAirspeed * speedMultiplier)}deg)` }}>
               <img src="./img/fi_needle.svg" className="box" alt="" />
             </div>
             <div className="mechanics box">
